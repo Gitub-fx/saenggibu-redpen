@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>생기부 빨간펜</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    .hero { text-align: center; padding: 60px 20px 30px; color: white; }
+    .hero h1 { font-size: 2.6rem; margin-bottom: 12px; }
+    .hero p { font-size: 1.1rem; opacity: 0.9; }
+    .btn {
+      display: inline-block; margin-top: 24px; padding: 14px 36px;
+      background: white; color: #764ba2; border: none; border-radius: 30px;
+      font-size: 1rem; font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .features { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; padding: 20px; }
+    .card {
+      background: white; border-radius: 16px; padding: 24px; width: 260px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center;
+    }
+    .card .icon { font-size: 2.4rem; margin-bottom: 10px; }
+    .card h3 { margin-bottom: 8px; }
+    .checker {
+      max-width: 800px; margin: 30px auto 60px; background: white;
+      border-radius: 16px; padding: 30px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    textarea { width: 100%; height: 180px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
+    .result { margin-top: 20px; }
+    .result li { margin: 8px 0 8px 20px; }
+    .ok { color: green; }
+    .bad { color: #d33; }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <h1>📝 생기부 빨간펜</h1>
+    <p>AI와 함께 학교생활기록부를 쉽고 빠르게 점검하세요!</p>
+    <button class="btn" onclick="document.getElementById('checker').scrollIntoView({behavior:'smooth'})">시작하기</button>
+  </section>
+
+  <section class="features">
+    <div class="card"><div class="icon">🚫</div><h3>금지어 점검</h3><p>기재할 수 없는 단어를 찾아줍니다.</p></div>
+    <div class="card"><div class="icon">📏</div><h3>글자수 확인</h3><p>나이스 바이트 기준으로 계산합니다.</p></div>
+    <div class="card"><div class="icon">🤖</div><h3>AI 흔적 탐지</h3><p>AI가 쓴 듯한 표현을 찾아줍니다.</p></div>
+  </section>
+
+  <section class="checker" id="checker">
+    <h2>문장 점검하기</h2>
+    <p style="margin:10px 0">학생부 문장을 붙여넣고 점검 버튼을 누르세요.</p>
+    <textarea id="input" placeholder="여기에 학생부 내용을 붙여넣으세요..."></textarea>
+    <button class="btn" onclick="check()">점검하기</button>
+    <div class="result" id="result"></div>
+  </section>
+
+  <script>
+    const banned = ['대회', 'TOEIC', 'TOEFL', 'TEPS', 'HSK', 'JLPT', '모의고사', '논문', '특허', '장학금', '자격증', '어학연수'];
+    const aiWords = ['위 학생은', '이 학생은', '본 학생은', '**'];
+
+    function bytes(str) {
+      let b = 0;
+      for (const ch of str) {
+        if (ch === '\n') b += 1;
+        else if (ch.charCodeAt(0) > 127) b += 3;
+        else b += 1;
+      }
+      return b;
+    }
+
+    function check() {
+      const text = document.getElementById('input').value;
+      const out = [];
+      banned.forEach(w => { if (text.includes(w)) out.push(`<li class="bad">금지어 발견: ${w}</li>`); });
+      aiWords.forEach(w => { if (text.includes(w)) out.push(`<li class="bad">AI 흔적 의심: ${w}</li>`); });
+      const b = bytes(text);
+      out.push(`<li class="${b > 1500 ? 'bad' : 'ok'}">글자수: ${b} byte / 1500 byte</li>`);
+      if (out.length === 1 && b <= 1500) out.unshift('<li class="ok">문제가 발견되지 않았습니다! 🎉</li>');
+      document.getElementById('result').innerHTML = '<h3>점검 결과</h3><ul>' + out.join('') + '</ul>';
+    }
+  </script>
+</body>
+</html>
