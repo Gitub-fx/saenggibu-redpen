@@ -4,6 +4,7 @@
 
 - 학생부 파일은 브라우저 안에서만 읽고 점검합니다. 서버로 보내거나 저장하지 않습니다.
 - 2026-2 「AI 에이전트 개발」 기말과제로 개발 중입니다.
+- 배포 주소: https://gitub-fx.github.io/saenggibu-redpen/
 
 ## 폴더
 - `screenshots/` 고치기 전/후 화면

@@ -17,3 +17,7 @@
 > GitHub 연결했어. 소속 대학: 충북대(마감 12/9 수), 앱 이름: 「생기부 빨간펜」. 커밋한 날을 위해 매일 일정 알림해줘
 
 - v0: AI가 처음 만들어 준 화면을 그대로 저장 (`screenshots/v0-desktop.png`, `screenshots/v0-mobile.png`)
+
+> 활성화해 / 완료
+
+- GitHub 저장소(Public) 생성, GitHub Pages로 배포 시작: https://gitub-fx.github.io/saenggibu-redpen/
