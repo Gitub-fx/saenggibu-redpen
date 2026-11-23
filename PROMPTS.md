@@ -21,3 +21,9 @@
 > 활성화해 / 완료
 
 - GitHub 저장소(Public) 생성, GitHub Pages로 배포 시작: https://gitub-fx.github.io/saenggibu-redpen/
+
+## 2026-11-23 (월) — 점검 규칙표
+
+- 예약해 둔 11/23 작업 알림(파싱자료에서 점검 규칙표 추출)에 따라 진행
+- 결과: `data/rules.json`(규칙표), `data/allowed_orgs.json`(교육관련기관 허용 목록 561곳), `docs/RULES.md`(검토용 설명서), `tests/rules.test.mjs`(정규식 시험 22건)
+- 시험하다 고친 것: '교육원'으로 끝나는 허용 기관이 아예 안 잡히던 문제, '상표를 출원'에서 조사 '를'을 놓친 문제
