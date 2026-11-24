@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "kordoc(HWP·HWPX 파서)를 브라우저용 단일 파일(vendor/kordoc-browser.mjs)로 묶는 도구",
+  "scripts": { "build": "node build.mjs && cp out/kordoc-browser.mjs ../../vendor/" },
+  "dependencies": { "kordoc": "4.22.13", "esbuild": "^0.25.0", "fflate": "^0.8.2", "buffer": "^6.0.3", "cfb": "^1.2.2" }
+}

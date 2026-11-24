@@ -206,9 +206,10 @@ export function createChecker(rules, orgs) {
       add({ start: 0, end: 0, match: '', ruleId: 'length', 항목: '글자수 초과', 심각도: '형식', 메시지: `${areaInfo.label}은(는) 최대 ${areaInfo.maxChars}자(${maxBytes}바이트)입니다. 지금 ${bytes}바이트로 ${bytes - maxBytes}바이트 넘습니다`, 근거: rules.최대글자수.근거 });
     }
 
-    // 중복 제거 + 정렬
+    // 중복 제거 + 정렬 (개인정보를 가린 자리 ●만으로 된 표시는 버림)
     const seen = new Set();
     const uniq = findings.filter((f) => {
+      if (f.match && /^[●\s]+$/.test(f.match)) return false;
       const k = `${f.ruleId}:${f.start}:${f.end}`;
       if (seen.has(k)) return false;
       seen.add(k);

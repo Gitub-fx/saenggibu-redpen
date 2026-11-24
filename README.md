@@ -14,3 +14,9 @@
 ## 점검 엔진
 - `js/engine.js`: 규칙표(`data/rules.json`)로 문장을 점검하는 엔진. 브라우저 안에서만 동작
 - 시험: `node tests/rules.test.mjs`, `node tests/engine.test.mjs`
+
+## 파일 점검 (PDF · 한글)
+- 나이스 출력 PDF, 한글(.hwp, .hwpx) 파일을 넣으면 브라우저 안에서 글자를 꺼내 영역별로 점검
+- 주민등록번호·성명·주소·연락처·이메일은 자동으로 가려서 화면에 보여 줌 (`js/mask.js`)
+- 가상 학생 샘플: `samples/가상학생_학생부_샘플.pdf`, `samples/가상학생_학생부_샘플.hwpx` (실제 학생 아님)
+- 사용한 오픈소스: `THIRD_PARTY_NOTICES.md`

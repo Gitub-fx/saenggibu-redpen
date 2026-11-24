@@ -1,0 +1,13 @@
+import * as f from 'fflate';
+import { Buffer } from 'buffer';
+const u8 = (b) => (b instanceof Uint8Array ? b : new Uint8Array(b));
+const B = (x) => Buffer.from(x);
+export const inflateRawSync = (b) => B(f.inflateSync(u8(b)));
+export const inflateSync = (b) => B(f.unzlibSync(u8(b)));
+export const deflateRawSync = (b, o) => B(f.deflateSync(u8(b), o));
+export const deflateSync = (b, o) => B(f.zlibSync(u8(b), o));
+export const gunzipSync = (b) => B(f.gunzipSync(u8(b)));
+export const gzipSync = (b) => B(f.gzipSync(u8(b)));
+export const unzipSync = (b) => B(f.decompressSync(u8(b)));
+export const constants = {};
+export default { inflateRawSync, inflateSync, deflateRawSync, deflateSync, gunzipSync, gzipSync, unzipSync, constants };

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>생기부 빨간펜</title>
+  <link rel="icon" href="data:,">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -46,6 +47,11 @@
     mark.금지 { background: #ffd6d6; } mark.형식 { background: #ffe9c2; } mark.확인 { background: #fff7b0; }
     b.금지 { color: #d33; } b.형식 { color: #d97706; } b.확인 { color: #a16207; }
     .note { font-size: .85rem; color: #555; margin-top: 10px; line-height: 1.6; }
+    .drop { display: block; border: 2px dashed #aaa; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; color: #666; }
+    .drop.over { border-color: #764ba2; background: #f4f0fb; }
+    .opts input { padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
+    details.sec { border-top: 1px solid #eee; padding: 10px 0; }
+    details.sec summary { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -83,8 +89,27 @@
     <div class="result" id="result"></div>
   </section>
 
+  <section class="checker" id="filecheck">
+    <h2>파일 점검하기 (PDF · 한글)</h2>
+    <p style="margin:10px 0">나이스에서 출력한 학교생활기록부 PDF나 한글(.hwp, .hwpx) 파일을 넣으세요. 파일은 <b>이 컴퓨터의 브라우저 안에서만</b> 읽고 점검하며, 어디로도 보내지 않습니다. 주민등록번호·이름·주소·연락처는 자동으로 가려서 보여 줍니다.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".pdf,.hwp,.hwpx" hidden>
+      <span>여기에 파일을 끌어다 놓거나 눌러서 고르세요</span>
+    </label>
+    <div class="opts" style="margin-top:12px">
+      <label>학교급 <select id="fileLevel"><option>고등학교</option><option>중학교</option></select></label>
+      <label>학년 <select id="fileGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
+      <label style="flex:1">가릴 학생 이름(선택, 쉼표로 구분) <input id="names" placeholder="예: 김하늘, 이바다"></label>
+    </div>
+    <button class="btn" id="sample">가상 학생 샘플로 체험하기</button>
+    <div class="result" id="fileResult"></div>
+  </section>
+
   <script type="module">
     import { createChecker, neisBytes } from './js/engine.js';
+    import { readFile, ReadError } from './js/reader.js';
+    import { maskPersonal } from './js/mask.js';
+    import { splitSections } from './js/document.js';
 
     const $ = (id) => document.getElementById(id);
     let checker;
@@ -160,6 +185,58 @@
         ? '문장을 복사했습니다. 새로 열린 바른한글 창의 입력칸에 붙여넣기(Ctrl+V) 후 [검사하기]를 누르세요.'
         : '복사하지 못했습니다. 입력칸의 문장을 직접 복사(Ctrl+A, Ctrl+C)해 바른한글 창에 붙여넣어 주세요.';
     });
+    // ---- 파일 점검 ----
+    const fileOut = $('fileResult');
+    function renderFindings(text, findings) {
+      let html = `<div class="marked">${highlight(text, findings)}</div><ul>`;
+      for (const f of findings) {
+        html += `<li><b class="${f.심각도}">[${f.심각도}] ${esc(f.항목)}</b>${f.match ? ` — “${esc(f.match.slice(0, 60))}”` : ''}<br><small>${esc(f.메시지)} (근거: ${esc(f.근거 || '')})</small></li>`;
+      }
+      return html + '</ul>';
+    }
+    async function checkFile(file) {
+      if (!checker) { fileOut.innerHTML = '<p class="bad">규칙을 아직 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</p>'; return; }
+      fileOut.innerHTML = `<p>“${esc(file.name)}” 읽는 중…</p>`;
+      let doc;
+      try { doc = await readFile(file); }
+      catch (e) {
+        const msg = e instanceof ReadError ? e.message : '파일을 읽는 중 문제가 생겼습니다. 다시 시도해 주세요.';
+        fileOut.innerHTML = `<p class="bad">${esc(msg)}</p>`; return;
+      }
+      const names = $('names').value.split(',').map((x) => x.trim()).filter(Boolean);
+      const masked = maskPersonal(doc.text, names);
+      const sections = splitSections(masked.text);
+      const opt = { level: $('fileLevel').value, grade: Number($('fileGrade').value), school: { names: [] } };
+      let total = { 금지: 0, 형식: 0, 확인: 0 };
+      const parts = sections.filter((sec) => sec.key !== '머리말').map((sec) => {
+        const r = checker.check(sec.text, { ...opt, area: sec.area });
+        const titleEnd = sec.text.indexOf('\n') === -1 ? sec.text.length : sec.text.indexOf('\n');
+        const fs = r.findings.filter((f) => f.ruleId !== 'length' && !(f.ruleId === 'special-char' && f.end <= titleEnd));
+        fs.forEach((f) => total[f.심각도]++);
+        return { sec, fs };
+      });
+      const hidden = masked.hits.map((h) => `${h.id} ${h.count}건`).join(', ') || '없음';
+      let html = `<h3>“${esc(doc.name)}” 점검 결과</h3>
+        <p>${doc.kind.toUpperCase()}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 영역 ${parts.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
+        <p class="note">가린 개인정보: ${esc(hidden)}</p>`;
+      for (const { sec, fs } of parts) {
+        const c = (s) => fs.filter((f) => f.심각도 === s).length;
+        html += `<details class="sec" ${fs.length ? 'open' : ''}><summary><b>${esc(sec.key)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}</summary>${renderFindings(sec.text.trim(), fs)}</details>`;
+      }
+      fileOut.innerHTML = html;
+    }
+    $('file').addEventListener('change', (e) => { if (e.target.files[0]) checkFile(e.target.files[0]); });
+    const drop = $('drop');
+    ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) checkFile(f); });
+    $('sample').addEventListener('click', async () => {
+      try {
+        const blob = await fetch('./samples/가상학생_학생부_샘플.pdf').then((r) => { if (!r.ok) throw new Error(); return r.blob(); });
+        checkFile(new File([blob], '가상학생_학생부_샘플.pdf', { type: 'application/pdf' }));
+      } catch (e) { fileOut.innerHTML = '<p class="bad">샘플 파일을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>'; }
+    });
+
     load();
   </script>
 </body>
