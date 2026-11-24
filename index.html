@@ -45,6 +45,7 @@
     .marked { white-space: pre-wrap; background: #fafafa; border-radius: 10px; padding: 14px; margin: 12px 0; line-height: 1.8; }
     mark.금지 { background: #ffd6d6; } mark.형식 { background: #ffe9c2; } mark.확인 { background: #fff7b0; }
     b.금지 { color: #d33; } b.형식 { color: #d97706; } b.확인 { color: #a16207; }
+    .note { font-size: .85rem; color: #555; margin-top: 10px; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -77,6 +78,8 @@
     <textarea id="input" placeholder="여기에 학생부 내용을 붙여넣으세요..."></textarea>
     <div class="counter" id="counter">0 / 0 byte</div>
     <button class="btn" id="run">점검하기</button>
+    <button class="btn" id="speller" title="문장을 복사한 뒤 바른한글 맞춤법 검사기를 새 창으로 엽니다">바른한글로 맞춤법 검사</button>
+    <p class="note" id="spellerNote">맞춤법은 <a href="https://nara-speller.co.kr/speller/" target="_blank" rel="noopener">바른한글</a>(구 부산대 맞춤법·문법 검사기)에서 검사합니다. 버튼을 누르면 문장이 복사되고 바른한글이 새 창으로 열립니다. 그 창에 붙여넣기(Ctrl+V) 후 검사하세요. 바른한글은 외부 사이트이므로 <b>학생 이름 등 개인정보는 지우고</b> 검사하세요.</p>
     <div class="result" id="result"></div>
   </section>
 
@@ -147,6 +150,16 @@
     $('area').addEventListener('change', updateCounter);
     $('input').addEventListener('input', updateCounter);
     $('run').addEventListener('click', run);
+    $('speller').addEventListener('click', async () => {
+      const text = $('input').value.trim();
+      if (!text) { $('spellerNote').textContent = '먼저 검사할 문장을 입력해 주세요.'; return; }
+      let copied = false;
+      try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { /* 복사 권한이 없으면 안내만 */ }
+      window.open('https://nara-speller.co.kr/speller/', '_blank', 'noopener');
+      $('spellerNote').textContent = copied
+        ? '문장을 복사했습니다. 새로 열린 바른한글 창의 입력칸에 붙여넣기(Ctrl+V) 후 [검사하기]를 누르세요.'
+        : '복사하지 못했습니다. 입력칸의 문장을 직접 복사(Ctrl+A, Ctrl+C)해 바른한글 창에 붙여넣어 주세요.';
+    });
     load();
   </script>
 </body>
