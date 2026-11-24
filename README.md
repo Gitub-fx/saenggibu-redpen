@@ -10,3 +10,7 @@
 - `screenshots/` 고치기 전/후 화면
 - `PROMPTS.md` AI에게 한 요청 기록
 - `CHECKLIST.md` 고친 항목 정리
+
+## 점검 엔진
+- `js/engine.js`: 규칙표(`data/rules.json`)로 문장을 점검하는 엔진. 브라우저 안에서만 동작
+- 시험: `node tests/rules.test.mjs`, `node tests/engine.test.mjs`
