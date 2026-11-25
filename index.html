@@ -52,6 +52,7 @@
     .opts input { padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
     details.sec { border-top: 1px solid #eee; padding: 10px 0; }
     details.sec summary { cursor: pointer; }
+    .sec-title { margin: 18px 0 4px; font-size: 1rem; }
   </style>
 </head>
 <body>
@@ -101,15 +102,17 @@
       <label>학년 <select id="fileGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
       <label style="flex:1">가릴 학생 이름(선택, 쉼표로 구분) <input id="names" placeholder="예: 김하늘, 이바다"></label>
     </div>
-    <button class="btn" id="sample">가상 학생 샘플로 체험하기</button>
+    <button class="btn" id="sample">가상 학생 한글 샘플로 체험하기</button>
+    <button class="btn" id="samplePdf">가상 학생 PDF 샘플로 체험하기</button>
     <div class="result" id="fileResult"></div>
   </section>
 
   <script type="module">
-    import { createChecker, neisBytes } from './js/engine.js';
+    import { createChecker, neisBytes, similarity } from './js/engine.js';
     import { readFile, ReadError } from './js/reader.js';
     import { maskPersonal } from './js/mask.js';
     import { splitSections } from './js/document.js';
+    import { splitRecord, extractItems, recordChecks } from './js/record.js';
 
     const $ = (id) => document.getElementById(id);
     let checker;
@@ -204,6 +207,10 @@
         fileOut.innerHTML = `<p class="bad">${esc(msg)}</p>`; return;
       }
       const names = $('names').value.split(',').map((x) => x.trim()).filter(Boolean);
+      if (doc.markdown && /<table|\|\s*---/.test(doc.markdown)) {
+        const items = extractItems(splitRecord(doc.markdown));
+        if (items.length) { renderRecord(doc, items, names); return; }
+      }
       const masked = maskPersonal(doc.text, names);
       const sections = splitSections(masked.text);
       const opt = { level: $('fileLevel').value, grade: Number($('fileGrade').value), school: { names: [] } };
@@ -225,17 +232,48 @@
       }
       fileOut.innerHTML = html;
     }
+    // 표 칸 단위 점검 (나이스 한글 출력물)
+    function renderRecord(doc, rawItems, names) {
+      const level = $('fileLevel').value, grade = Number($('fileGrade').value);
+      const hiddenCount = {};
+      const items = rawItems.map((it) => {
+        const m = maskPersonal(it.text, names);
+        m.hits.forEach((h) => (hiddenCount[h.id] = (hiddenCount[h.id] || 0) + h.count));
+        return { ...it, text: m.text };
+      });
+      const results = items.map((it) => checker.check(it.text, { level, grade: Number(it.meta.학년) || grade, area: it.area }));
+      recordChecks(items, similarity).forEach((f) => results[f.item].findings.push(f));
+      const total = { 금지: 0, 형식: 0, 확인: 0 };
+      results.forEach((r) => r.findings.forEach((f) => total[f.심각도]++));
+      const hidden = Object.entries(hiddenCount).map(([k, v]) => `${k} ${v}건`).join(', ') || '없음';
+      let html = `<h3>“${esc(doc.name)}” 점검 결과</h3>
+        <p>${doc.kind.toUpperCase()}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 점검한 칸 ${items.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
+        <p class="note">표의 칸(과목별 세특, 창체 영역, 출결 특기사항, 행특 등)마다 따로 점검했습니다. 가린 개인정보: ${esc(hidden)}</p>`;
+      let current = '';
+      items.forEach((it, i) => {
+        const r = results[i];
+        r.findings.sort((a, b) => a.start - b.start);
+        if (it.section !== current) { html += `<h4 class="sec-title">${esc(it.section)}</h4>`; current = it.section; }
+        const c = (s) => r.findings.filter((f) => f.심각도 === s).length;
+        const bytes = r.maxBytes ? ` · ${r.bytes}/${r.maxBytes} byte` : '';
+        html += `<details class="sec" ${r.findings.length ? 'open' : ''}><summary><b>${esc(it.label)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}${bytes}</summary>${renderFindings(it.text, r.findings)}</details>`;
+      });
+      fileOut.innerHTML = html;
+    }
+
     $('file').addEventListener('change', (e) => { if (e.target.files[0]) checkFile(e.target.files[0]); });
     const drop = $('drop');
     ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
     ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
     drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) checkFile(f); });
-    $('sample').addEventListener('click', async () => {
+    async function loadSample(name) {
       try {
-        const blob = await fetch('./samples/가상학생_학생부_샘플.pdf').then((r) => { if (!r.ok) throw new Error(); return r.blob(); });
-        checkFile(new File([blob], '가상학생_학생부_샘플.pdf', { type: 'application/pdf' }));
+        const blob = await fetch('./samples/' + encodeURIComponent(name)).then((r) => { if (!r.ok) throw new Error(); return r.blob(); });
+        checkFile(new File([blob], name));
       } catch (e) { fileOut.innerHTML = '<p class="bad">샘플 파일을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>'; }
-    });
+    }
+    $('sample').addEventListener('click', () => loadSample('가상학생_전공과_학생부.hwpx'));
+    $('samplePdf').addEventListener('click', () => loadSample('가상학생_학생부_샘플.pdf'));
 
     load();
   </script>

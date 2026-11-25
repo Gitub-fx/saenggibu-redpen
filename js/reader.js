@@ -90,7 +90,7 @@ async function readHwp(bytes) {
     if (/암호|password|encrypt|DRM/i.test(msg)) throw new ReadError('password', '암호나 보안(DRM)이 걸린 한글 파일입니다. 보안을 푼 파일로 다시 넣어 주세요.');
     throw new ReadError('broken', '한글 파일을 읽지 못했습니다. 한글에서 다시 저장한 뒤 넣어 주세요.');
   }
-  return { text: markdownToPlain(r.markdown || ''), pageCount: r.pageCount || null };
+  return { text: markdownToPlain(r.markdown || ''), markdown: r.markdown || '', pageCount: r.pageCount || null };
 }
 
 /**
