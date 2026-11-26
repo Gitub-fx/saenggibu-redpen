@@ -53,6 +53,7 @@
     details.sec { border-top: 1px solid #eee; padding: 10px 0; }
     details.sec summary { cursor: pointer; }
     .sec-title { margin: 18px 0 4px; font-size: 1rem; }
+    .warn { background: #fff4d6; border-radius: 8px; padding: 10px; font-size: .9rem; }
   </style>
 </head>
 <body>
@@ -201,7 +202,12 @@
       if (!checker) { fileOut.innerHTML = '<p class="bad">규칙을 아직 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</p>'; return; }
       fileOut.innerHTML = `<p>“${esc(file.name)}” 읽는 중…</p>`;
       let doc;
-      try { doc = await readFile(file); }
+      try {
+        doc = await readFile(file, {
+          allowOcr: true,
+          onPage: ({ page, total }) => { fileOut.innerHTML = `<p>스캔한 PDF라서 글자를 인식하는 중… (${page}/${total}쪽)<br><small>한 쪽에 몇 초씩 걸립니다. 파일은 이 컴퓨터 안에서만 처리합니다.</small></p>`; },
+        });
+      }
       catch (e) {
         const msg = e instanceof ReadError ? e.message : '파일을 읽는 중 문제가 생겼습니다. 다시 시도해 주세요.';
         fileOut.innerHTML = `<p class="bad">${esc(msg)}</p>`; return;
@@ -213,7 +219,7 @@
       }
       const masked = maskPersonal(doc.text, names);
       const sections = splitSections(masked.text);
-      const opt = { level: $('fileLevel').value, grade: Number($('fileGrade').value), school: { names: [] } };
+      const opt = { level: $('fileLevel').value, grade: Number($('fileGrade').value), school: { names: [] }, ocr: !!doc.ocr };
       let total = { 금지: 0, 형식: 0, 확인: 0 };
       const parts = sections.filter((sec) => sec.key !== '머리말').map((sec) => {
         const r = checker.check(sec.text, { ...opt, area: sec.area });
@@ -224,7 +230,8 @@
       });
       const hidden = masked.hits.map((h) => `${h.id} ${h.count}건`).join(', ') || '없음';
       let html = `<h3>“${esc(doc.name)}” 점검 결과</h3>
-        <p>${doc.kind.toUpperCase()}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 영역 ${parts.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
+        ${doc.ocr ? '<p class="warn">스캔한 PDF라서 글자 인식(OCR)으로 읽었습니다. 인식 오류(예: 실천→실친)가 섞일 수 있으니, 표시된 곳은 원본과 대조해 주세요. 가장 정확한 점검은 나이스에서 PDF·한글로 저장한 파일로 할 수 있습니다.</p>' : ''}
+        <p>${doc.kind.toUpperCase()}${doc.ocr ? '(스캔·글자 인식)' : ''}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 영역 ${parts.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
         <p class="note">가린 개인정보: ${esc(hidden)}</p>`;
       for (const { sec, fs } of parts) {
         const c = (s) => fs.filter((f) => f.심각도 === s).length;

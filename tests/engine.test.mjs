@@ -71,6 +71,22 @@ expect('행특 300자 초과', ids(r).includes('length') && r.maxBytes === 900, 
 r = check('가'.repeat(300), { area: '행특' });
 expect('행특 300자는 통과', !ids(r).includes('length'), ids(r));
 
+// 줄바꿈으로 끊긴 문장 (표 칸·스캔본)
+r = check('실망하지 않고 끝까지 최선을 다\n함. 친구와 협력함.', { area: '행특' });
+expect('줄이 바뀐 문장은 이어서 봄', !ids(r).includes('ai-ending'), JSON.stringify(r.findings));
+r = check('실험에 적극적으로 참여하였\n다.', { area: '행특' });
+expect('줄이 바뀌어도 ~다. 종결은 잡음', ids(r).includes('ai-ending'), ids(r));
+// 스캔본 모드
+r = check('현장체험학습(2026.05.20)에 참여함. **', { area: '창체_자율자치', ocr: true });
+expect('스캔본: 온점 누락·서식 기호는 빼기', !ids(r).includes('ai-markdown') && !r.findings.some((f) => /온점/.test(f.메시지)), JSON.stringify(r.findings));
+r = check('교내 토론대회에 참여함. 봉사(2026.03.04~2026.07.08.)', { area: '창체_자율자치', ocr: true });
+expect('스캔본: 금지는 그대로, 형식은 확인으로', r.findings.find((f) => f.ruleId === 'contest').심각도 === '금지' && r.findings.find((f) => f.ruleId === 'date-format').심각도 === '확인', JSON.stringify(r.findings.map((f) => [f.ruleId, f.심각도])));
+
+r = check('2022.09.02. - 2022.09.30. (학교)가상학교 에너지감시단 활동', { area: '' });
+expect('나이스 봉사 표의 기간(띄어쓰기)은 통과', !ids(r).includes('date-format'), JSON.stringify(r.findings));
+r = check('봉사활동(2026.03.04. - 2026.07.08.)에 참여함.', { area: '창체_자율자치' });
+expect('괄호 안 기간 띄어쓰기는 잡음', ids(r).includes('date-format'), ids(r));
+
 // 유사도
 const a = '실험 보고서를 작성하며 변인 통제의 중요성을 이해하고 결과를 그래프로 정리하여 발표함.';
 const b = '실험 보고서를 작성하며 변인 통제의 중요성을 이해하고 결과를 표로 정리하여 발표함.';

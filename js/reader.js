@@ -7,6 +7,18 @@ export class ReadError extends Error {
   constructor(code, message) { super(message); this.code = code; }
 }
 
+/** 나이스 출력물의 쪽 머리글·바닥글 줄(출력일·쪽 번호·복합기 출력 기록)을 지운다 */
+export function stripPageFurniture(text) {
+  return text
+    .split('\n')
+    .filter((l) => !(
+      /\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일.{0,6}\d{1,3}\s*\/\s*\d{1,3}/.test(l) || // 2026년11월26일 2 / 10
+      /\d{1,3}\s*\/\s*\d{1,3}\s*(반|$)/.test(l) && /(반|번호|성명|이름)/.test(l) || // 쪽 번호 + 반·번호·성명
+      /\d{4}[.\-]\d{2}[.\-]\d{2}\.?\s+\d{1,2}:\d{2}(:\d{2})?/.test(l) // 출력 시각 기록
+    ))
+    .join('\n');
+}
+
 export function detectKind(name, bytes) {
   const head = new Uint8Array(bytes.slice(0, 8));
   const ext = (name.split('.').pop() || '').toLowerCase();
@@ -18,7 +30,7 @@ export function detectKind(name, bytes) {
 }
 
 /** PDF → 줄 단위 텍스트 (같은 높이의 글자를 한 줄로 모음) */
-async function readPdf(bytes) {
+async function readPdf(bytes, opts = {}) {
   const pdfjs = await import(new URL('pdfjs/pdf.min.mjs', VENDOR).href);
   pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs/pdf.worker.min.mjs', VENDOR).href;
   let doc;
@@ -54,9 +66,18 @@ async function readPdf(bytes) {
   }
   const text = pages.join('\n');
   if (text.replace(/\s/g, '').length < 20 * doc.numPages) {
-    throw new ReadError('no-text', '글자 정보가 없는 PDF입니다(스캔본 등). 나이스에서 PDF로 다시 저장해 주세요.');
+    // 스캔한 PDF: 브라우저 안에서 글자 인식(OCR)
+    if (!opts.allowOcr) throw new ReadError('no-text', '글자 정보가 없는 PDF입니다(스캔본). 글자 인식으로 읽으려면 다시 넣어 주세요.');
+    const { ocrPdf } = await import('./ocr.js');
+    let ocrPages;
+    try {
+      ocrPages = await ocrPdf(doc, opts.onPage);
+    } catch (e) {
+      throw new ReadError('ocr-failed', '스캔본 글자 인식에 실패했습니다. 나이스에서 PDF나 한글 파일로 저장한 파일을 넣어 주세요.');
+    }
+    return { text: stripPageFurniture(ocrPages.join('\n')), pageCount: doc.numPages, ocr: true };
   }
-  return { text, pageCount: doc.numPages };
+  return { text: stripPageFurniture(text), pageCount: doc.numPages };
 }
 
 /** kordoc 마크다운 → 점검용 평문 (표 칸은 줄로) */
@@ -97,12 +118,12 @@ async function readHwp(bytes) {
  * @param {File} file
  * @returns {Promise<{ name: string, kind: string, text: string, pageCount: number|null }>}
  */
-export async function readFile(file) {
+export async function readFile(file, opts = { allowOcr: true }) {
   const MAX = 30 * 1024 * 1024;
   if (file.size > MAX) throw new ReadError('too-big', '파일이 30MB보다 큽니다. 학급 단위로 나눠 출력해 주세요.');
   const bytes = await file.arrayBuffer();
   const kind = detectKind(file.name, bytes);
-  if (kind === 'pdf') return { name: file.name, kind, ...(await readPdf(bytes)) };
+  if (kind === 'pdf') return { name: file.name, kind, ...(await readPdf(bytes, opts)) };
   if (kind === 'hwp' || kind === 'hwpx') return { name: file.name, kind, ...(await readHwp(bytes)) };
   throw new ReadError('unsupported', 'PDF, 한글(.hwp, .hwpx) 파일만 점검할 수 있습니다.');
 }

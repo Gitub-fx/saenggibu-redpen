@@ -67,11 +67,12 @@ function literalMatches(words, text) {
 /** 문장 단위로 쪼개면서 원문 위치를 함께 돌려준다 */
 export function sentences(text) {
   const out = [];
-  const re = /[^.!?\n]+[.!?]*|\n/g;
+  // 표 칸·스캔본에서는 문장 중간에 줄이 바뀌므로, 줄바꿈 하나는 문장을 끊지 않는다 (빈 줄은 끊음)
+  const re = /(?:[^.!?\n]|\n(?!\s*\n))+[.!?]*|\n\s*\n/g;
   let m;
   while ((m = re.exec(text)) !== null) {
     const s = m[0];
-    if (s === '\n' || !s.trim()) continue;
+    if (!s.trim()) continue;
     const lead = s.length - s.trimStart().length;
     out.push({ text: s.trim(), start: m.index + lead, end: m.index + lead + s.trim().length });
   }
@@ -108,7 +109,7 @@ export function createChecker(rules, orgs) {
    * @returns {{ findings: object[], bytes: number, maxBytes: number|null }}
    */
   function check(text, opt = {}) {
-    const { level = '고등학교', area = '', grade = 1, school = {} } = opt;
+    const { level = '고등학교', area = '', grade = 1, school = {} } = opt; // opt.ocr: 스캔본 글자 인식 결과
     const findings = [];
     const add = (f) => findings.push(f);
 
@@ -204,6 +205,15 @@ export function createChecker(rules, orgs) {
     const maxBytes = areaInfo ? areaInfo.maxBytes : null;
     if (maxBytes && bytes > maxBytes) {
       add({ start: 0, end: 0, match: '', ruleId: 'length', 항목: '글자수 초과', 심각도: '형식', 메시지: `${areaInfo.label}은(는) 최대 ${areaInfo.maxChars}자(${maxBytes}바이트)입니다. 지금 ${bytes}바이트로 ${bytes - maxBytes}바이트 넘습니다`, 근거: rules.최대글자수.근거 });
+    }
+
+    // 스캔본(글자 인식) 모드: 온점 누락·서식 기호는 인식 잡음일 수 있어 빼고, 나머지 형식 오류는 '확인'으로 낮춤
+    if (opt.ocr) {
+      for (let i = findings.length - 1; i >= 0; i--) {
+        const f = findings[i];
+        if (f.ruleId === 'ai-markdown' || (f.ruleId === 'date-format' && /온점/.test(f.메시지))) findings.splice(i, 1);
+        else if (f.심각도 === '형식') findings[i] = { ...f, 심각도: '확인', 메시지: f.메시지 + ' (스캔본 글자 인식 결과이므로 원본과 대조해 주세요)' };
+      }
     }
 
     // 중복 제거 + 정렬 (개인정보를 가린 자리 ●만으로 된 표시는 버림)

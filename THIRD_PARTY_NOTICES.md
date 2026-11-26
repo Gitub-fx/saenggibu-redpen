@@ -11,3 +11,5 @@
 | [buffer](https://github.com/feross/buffer) | kordoc 묶음 안 | MIT |
 
 `vendor/kordoc-browser.mjs`는 `tools/build-kordoc/`에서 `npm install && npm run build`로 다시 만들 수 있습니다. Node 전용 기능(zlib, fs 등)을 브라우저용으로 바꿔 끼우고, HWPX 압축 해제(jszip nodeStream)를 브라우저 방식으로 고쳐 묶었습니다.
+| [tesseract.js](https://github.com/naptha/tesseract.js) 5.1.1, tesseract.js-core 5.1.1 | `vendor/tesseract/` 스캔한 PDF 글자 인식 | Apache-2.0 |
+| [tessdata 한국어 학습 데이터](https://github.com/tesseract-ocr/tessdata) (4.0.0_best_int) | `vendor/tesseract/lang/kor.traineddata.gz` | Apache-2.0 |
