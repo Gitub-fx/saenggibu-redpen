@@ -78,7 +78,7 @@
     <p style="margin:10px 0">학교급과 영역을 고르고 학생부 문장을 붙여넣은 뒤 점검 버튼을 누르세요.</p>
     <div class="opts">
       <label>학교급
-        <select id="level"><option>고등학교</option><option>중학교</option></select>
+        <select id="level"><option>고등학교</option><option>중학교</option><option>초등학교</option></select>
       </label>
       <label>학년
         <select id="grade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select>
@@ -103,7 +103,7 @@
       <span>여기에 파일을 끌어다 놓거나 눌러서 고르세요</span>
     </label>
     <div class="opts" style="margin-top:12px">
-      <label>학교급 <select id="fileLevel"><option>고등학교</option><option>중학교</option></select></label>
+      <label>학교급 <select id="fileLevel"><option>고등학교</option><option>중학교</option><option>초등학교</option></select></label>
       <label>학년 <select id="fileGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
       <label style="flex:1">가릴 학생 이름(선택, 쉼표로 구분) <input id="names" placeholder="예: 김하늘, 이바다"></label>
     </div>
@@ -136,16 +136,23 @@
 
     function fillAreas() {
       const areas = checker.areas($('level').value);
-      $('area').innerHTML = areas.map((a) => `<option value="${a.id}" data-max="${a.maxBytes}">${a.label} (${a.maxChars}자)</option>`).join('');
+      $('area').innerHTML = areas.map((a) => `<option value="${a.id}" data-max="${a.maxBytes || ''}">${a.label} (${a.maxChars ? a.maxChars + '자' : '글자수 제한 없음'})</option>`).join('');
+      fillGrades('grade', $('level').value);
       updateCounter();
+    }
+
+    function fillGrades(id, level) {
+      const n = level === '초등학교' ? 6 : 3, sel = $(id), cur = sel.value;
+      sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}">${i + 1}학년</option>`).join('');
+      if (Number(cur) <= n) sel.value = cur;
     }
 
     function updateCounter() {
       const opt = $('area').selectedOptions[0];
-      const max = opt ? Number(opt.dataset.max) : 0;
+      const max = opt && opt.dataset.max ? Number(opt.dataset.max) : 0;
       const b = neisBytes($('input').value);
-      $('counter').textContent = `${b} / ${max} byte`;
-      $('counter').className = 'counter' + (b > max ? ' over' : '');
+      $('counter').textContent = max ? `${b} / ${max} byte` : `${b} byte (글자수 제한 없음)`;
+      $('counter').className = 'counter' + (max && b > max ? ' over' : '');
     }
 
     function esc(s) { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -169,7 +176,7 @@
         level: $('level').value, area: $('area').value, grade: Number($('grade').value),
       });
       const count = (s) => findings.filter((f) => f.심각도 === s).length;
-      let html = `<h3>점검 결과</h3><p>금지 ${count('금지')}건 · 형식 ${count('형식')}건 · 확인 ${count('확인')}건 · ${bytes}/${maxBytes} byte</p>`;
+      let html = `<h3>점검 결과</h3><p>금지 ${count('금지')}건 · 형식 ${count('형식')}건 · 확인 ${count('확인')}건 · ${maxBytes ? `${bytes}/${maxBytes} byte` : `${bytes} byte (글자수 제한 없음)`}</p>`;
       if (!findings.length) html += '<p class="ok">문제가 발견되지 않았습니다! 🎉</p>';
       html += `<div class="marked">${highlight(text, findings)}</div><ul>`;
       for (const f of findings) {
@@ -179,6 +186,7 @@
     }
 
     $('level').addEventListener('change', fillAreas);
+    $('fileLevel').addEventListener('change', () => fillGrades('fileGrade', $('fileLevel').value));
     $('area').addEventListener('change', updateCounter);
     $('input').addEventListener('input', updateCounter);
     $('run').addEventListener('click', run);

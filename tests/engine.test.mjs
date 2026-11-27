@@ -1,6 +1,6 @@
 // 점검 엔진 시험: node tests/engine.test.mjs
 import fs from 'fs';
-import { createChecker, neisBytes, similarity } from '../js/engine.js';
+import { createChecker, neisBytes, similarity, areasFor } from '../js/engine.js';
 
 const rules = JSON.parse(fs.readFileSync(new URL('../data/rules.json', import.meta.url), 'utf8'));
 const orgs = JSON.parse(fs.readFileSync(new URL('../data/allowed_orgs.json', import.meta.url), 'utf8'));
@@ -86,6 +86,20 @@ r = check('2022.09.02. - 2022.09.30. (학교)가상학교 에너지감시단 활
 expect('나이스 봉사 표의 기간(띄어쓰기)은 통과', !ids(r).includes('date-format'), JSON.stringify(r.findings));
 r = check('봉사활동(2026.03.04. - 2026.07.08.)에 참여함.', { area: '창체_자율자치' });
 expect('괄호 안 기간 띄어쓰기는 잡음', ids(r).includes('date-format'), ids(r));
+
+// 초등학교
+const elem = areasFor(rules, '초등학교');
+expect('초등: 행특 글자수 제한 없음', elem.find((a) => a.id === '행특').maxBytes === null);
+expect('초등: 출결 특기사항 500자', elem.find((a) => a.id === '출결_특기사항').maxChars === 500);
+expect('초등: 자율·자치·동아리 통합 이름', /통합/.test(elem.find((a) => a.id === '창체_자율자치').label));
+r = check('가'.repeat(400), { level: '초등학교', area: '행특' });
+expect('초등 행특 400자도 통과', !ids(r).includes('length'), ids(r));
+r = check('YBM 영어 인증에 응시함.', { level: '초등학교', area: '행특' });
+expect('초등: YBM 금지', ids(r).includes('lang-test'), ids(r));
+r = check('학급 반장(2026.03.02.-2026.07.24.)으로 활동함.', { level: '초등학교', area: '창체_자율자치', grade: 5 });
+expect('초등 5학년 임원: 학년말 확인', ids(r).includes('officer-term-end'), ids(r));
+r = check('학급 반장(2026.03.02.-2027.01.08.)으로 활동함.', { level: '초등학교', area: '창체_자율자치', grade: 6 });
+expect('초등 6학년(마지막 학년)은 졸업일까지', !ids(r).includes('officer-term-end'), ids(r));
 
 // 유사도
 const a = '실험 보고서를 작성하며 변인 통제의 중요성을 이해하고 결과를 그래프로 정리하여 발표함.';

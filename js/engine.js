@@ -13,31 +13,40 @@ export function neisBytes(text) {
   return b;
 }
 
-/** 영역 목록 (학교급별) — 이름, 최대 글자수 */
+const AREA_LABELS = {
+  창체_자율자치: '창체 · 자율·자치활동',
+  창체_동아리: '창체 · 동아리활동',
+  창체_진로: '창체 · 진로활동',
+  세특_과목별: '과목별 세부능력 및 특기사항',
+  세특_개인별: '개인별 세부능력 및 특기사항',
+  행특: '행동특성 및 종합의견',
+  출결_특기사항: '출결상황 특기사항',
+  일상생활활동: '일상생활 활동상황',
+  독서_공통: '독서활동 · 공통',
+  독서_과목별: '독서활동 · 과목별',
+  봉사_활동내용: '봉사활동 · 활동내용',
+  인적학적_특기사항: '인적·학적사항 특기사항',
+  자유학기_진로탐색: '자유학기 · 진로탐색활동',
+  자유학기_주제선택: '자유학기 · 주제선택활동',
+  자유학기_예술체육: '자유학기 · 예술·체육활동',
+  자유학기_동아리: '자유학기 · 동아리활동',
+};
+const LEVEL_AREAS = {
+  고등학교: ['창체_자율자치', '창체_동아리', '창체_진로', '세특_과목별', '세특_개인별', '행특', '출결_특기사항', '일상생활활동', '독서_공통', '독서_과목별', '봉사_활동내용', '인적학적_특기사항'],
+  중학교: ['창체_자율자치', '창체_동아리', '창체_진로', '세특_과목별', '세특_개인별', '행특', '출결_특기사항', '일상생활활동', '독서_공통', '독서_과목별', '봉사_활동내용', '인적학적_특기사항', '자유학기_진로탐색', '자유학기_주제선택', '자유학기_예술체육', '자유학기_동아리'],
+  // 초등: 자율·자치·동아리 통합, 교과는 '성취수준 및 특기사항', 창체·일상생활·교과·행특은 글자수 제한 없음
+  초등학교: ['창체_자율자치', '창체_진로', '세특_과목별', '행특', '출결_특기사항', '일상생활활동', '봉사_활동내용', '인적학적_특기사항'],
+};
+const ELEM_LABELS = { 창체_자율자치: '창체 · 자율·자치·동아리활동(통합)', 세특_과목별: '교과 · 성취수준 및 특기사항' };
+
+/** 영역 목록 (학교급별) — 이름, 최대 글자수(제한 없으면 null) */
 export function areasFor(rules, level) {
   const t = rules.최대글자수;
-  const merged = { ...t.공통, ...(level === '중학교' ? t.중학교 : t.고등학교) };
-  const labels = {
-    창체_자율자치: '창체 · 자율·자치활동',
-    창체_동아리: '창체 · 동아리활동',
-    창체_진로: '창체 · 진로활동',
-    세특_과목별: '과목별 세부능력 및 특기사항',
-    세특_개인별: '개인별 세부능력 및 특기사항',
-    행특: '행동특성 및 종합의견',
-    출결_특기사항: '출결상황 특기사항',
-    일상생활활동: '일상생활 활동상황',
-    독서_공통: '독서활동 · 공통',
-    독서_과목별: '독서활동 · 과목별',
-    봉사_활동내용: '봉사활동 · 활동내용',
-    인적학적_특기사항: '인적·학적사항 특기사항',
-    자유학기_진로탐색: '자유학기 · 진로탐색활동',
-    자유학기_주제선택: '자유학기 · 주제선택활동',
-    자유학기_예술체육: '자유학기 · 예술·체육활동',
-    자유학기_동아리: '자유학기 · 동아리활동',
-  };
-  return Object.keys(labels)
-    .filter((k) => merged[k])
-    .map((k) => ({ id: k, label: labels[k], maxChars: merged[k], maxBytes: merged[k] * 3 }));
+  const limits = level === '초등학교' ? t.초등학교 : { ...t.공통, ...(level === '중학교' ? t.중학교 : t.고등학교) };
+  return (LEVEL_AREAS[level] || LEVEL_AREAS.고등학교).map((id) => {
+    const max = typeof limits[id] === 'number' ? limits[id] : null;
+    return { id, label: (level === '초등학교' && ELEM_LABELS[id]) || AREA_LABELS[id], maxChars: max, maxBytes: max ? max * 3 : null };
+  });
 }
 
 function allMatches(re, text) {
@@ -116,6 +125,7 @@ export function createChecker(rules, orgs) {
     // 1) 기재 금지 사항
     for (const r of rules.기재금지) {
       if (r.예외영역 && r.예외영역.includes(area)) continue;
+      if (r.제외학교급 && r.제외학교급.includes(level)) continue;
       let hits = [];
       if (r.패턴) hits = hits.concat(literalMatches(r.패턴, text));
       if (r.정규식) hits = hits.concat(allMatches(new RegExp(r.정규식, 'u'), text));
@@ -185,6 +195,7 @@ export function createChecker(rules, orgs) {
     // 7) 임원 재임 기간
     if (area === '창체_자율자치') {
       const o = rules.임원;
+      const lastGrade = (o.마지막학년 || {})[level] || 3;
       const termRe = new RegExp(o.재임기간정규식, 'u');
       for (const raw of allMatches(new RegExp(o.임원정규식, 'u'), text)) {
         const lead = raw.match.length - raw.match.trimStart().length;
@@ -193,8 +204,8 @@ export function createChecker(rules, orgs) {
         const m = after.match(termRe);
         if (!m) {
           add({ ...h, ruleId: 'officer-term', 항목: '임원 재임 기간', 심각도: o.심각도, 메시지: o.설명, 근거: o.근거 });
-        } else if (grade !== 3 && !m[0].includes(o.학년말)) {
-          add({ start: h.start, end: h.end + after.indexOf(m[0]) + m[0].length, match: h.match + m[0], ruleId: 'officer-term-end', 항목: '임원 재임 기간 끝', 심각도: '확인', 메시지: `1·2학년 임원의 재임 기간은 학년말(${o.학년말})까지 씁니다`, 근거: o.근거 });
+        } else if (grade !== lastGrade && !m[0].includes(o.학년말)) {
+          add({ start: h.start, end: h.end + after.indexOf(m[0]) + m[0].length, match: h.match + m[0], ruleId: 'officer-term-end', 항목: '임원 재임 기간 끝', 심각도: '확인', 메시지: `마지막 학년이 아닌 임원의 재임 기간은 학년말(${o.학년말})까지 씁니다 (마지막 학년은 졸업일까지)`, 근거: o.근거 });
         }
       }
     }
