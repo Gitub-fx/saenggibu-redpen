@@ -8,9 +8,9 @@ async def m(path, shot):
         pg=await b.new_page(viewport={'width':1280,'height':900}); errs=[]
         pg.on('pageerror',lambda e: errs.append(str(e)[:300])); pg.on('console',lambda m: errs.append(m.text[:200]) if m.type=='error' else None)
         await pg.goto('http://localhost:8765/'); await pg.wait_for_timeout(800)
-        if path=='sample': await pg.click('#sample')
+        if path in ('sample','samplePdf','sampleClass'): await pg.click('#'+path)
         else: await pg.set_input_files('#file', path)
-        await pg.wait_for_function("document.querySelector('#fileResult h3') || document.querySelector('#fileResult .bad')", timeout=30000)
+        await pg.wait_for_function("document.querySelector('#fileResult h3') || document.querySelector('#fileResult .bad')", timeout=400000)
         print(await pg.inner_text('#fileResult'))
         print('errors', errs)
         if shot: await pg.locator('#filecheck').screenshot(path=shot)

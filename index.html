@@ -54,6 +54,10 @@
     details.sec summary { cursor: pointer; }
     .sec-title { margin: 18px 0 4px; font-size: 1rem; }
     .warn { background: #fff4d6; border-radius: 8px; padding: 10px; font-size: .9rem; }
+    table.summary { border-collapse: collapse; margin: 12px 0; width: 100%; }
+    table.summary th, table.summary td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
+    table.summary td.n { text-align: right; }
+    details.student { border: 1px solid #eee; border-radius: 10px; padding: 8px 12px; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -105,15 +109,14 @@
     </div>
     <button class="btn" id="sample">가상 학생 한글 샘플로 체험하기</button>
     <button class="btn" id="samplePdf">가상 학생 PDF 샘플로 체험하기</button>
+    <button class="btn" id="sampleClass">가상 반 전체(3명) 샘플로 체험하기</button>
     <div class="result" id="fileResult"></div>
   </section>
 
   <script type="module">
     import { createChecker, neisBytes, similarity } from './js/engine.js';
     import { readFile, ReadError } from './js/reader.js';
-    import { maskPersonal } from './js/mask.js';
-    import { splitSections } from './js/document.js';
-    import { splitRecord, extractItems, recordChecks } from './js/record.js';
+    import { analyzeDocument } from './js/analyze.js';
 
     const $ = (id) => document.getElementById(id);
     let checker;
@@ -207,65 +210,50 @@
           allowOcr: true,
           onPage: ({ page, total }) => { fileOut.innerHTML = `<p>스캔한 PDF라서 글자를 인식하는 중… (${page}/${total}쪽)<br><small>한 쪽에 몇 초씩 걸립니다. 파일은 이 컴퓨터 안에서만 처리합니다.</small></p>`; },
         });
-      }
-      catch (e) {
+      } catch (e) {
         const msg = e instanceof ReadError ? e.message : '파일을 읽는 중 문제가 생겼습니다. 다시 시도해 주세요.';
         fileOut.innerHTML = `<p class="bad">${esc(msg)}</p>`; return;
       }
       const names = $('names').value.split(',').map((x) => x.trim()).filter(Boolean);
-      if (doc.markdown && /<table|\|\s*---/.test(doc.markdown)) {
-        const items = extractItems(splitRecord(doc.markdown));
-        if (items.length) { renderRecord(doc, items, names); return; }
-      }
-      const masked = maskPersonal(doc.text, names);
-      const sections = splitSections(masked.text);
-      const opt = { level: $('fileLevel').value, grade: Number($('fileGrade').value), school: { names: [] }, ocr: !!doc.ocr };
-      let total = { 금지: 0, 형식: 0, 확인: 0 };
-      const parts = sections.filter((sec) => sec.key !== '머리말').map((sec) => {
-        const r = checker.check(sec.text, { ...opt, area: sec.area });
-        const titleEnd = sec.text.indexOf('\n') === -1 ? sec.text.length : sec.text.indexOf('\n');
-        const fs = r.findings.filter((f) => f.ruleId !== 'length' && !(f.ruleId === 'special-char' && f.end <= titleEnd));
-        fs.forEach((f) => total[f.심각도]++);
-        return { sec, fs };
-      });
-      const hidden = masked.hits.map((h) => `${h.id} ${h.count}건`).join(', ') || '없음';
-      let html = `<h3>“${esc(doc.name)}” 점검 결과</h3>
-        ${doc.ocr ? '<p class="warn">스캔한 PDF라서 글자 인식(OCR)으로 읽었습니다. 인식 오류(예: 실천→실친)가 섞일 수 있으니, 표시된 곳은 원본과 대조해 주세요. 가장 정확한 점검은 나이스에서 PDF·한글로 저장한 파일로 할 수 있습니다.</p>' : ''}
-        <p>${doc.kind.toUpperCase()}${doc.ocr ? '(스캔·글자 인식)' : ''}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 영역 ${parts.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
-        <p class="note">가린 개인정보: ${esc(hidden)}</p>`;
-      for (const { sec, fs } of parts) {
-        const c = (s) => fs.filter((f) => f.심각도 === s).length;
-        html += `<details class="sec" ${fs.length ? 'open' : ''}><summary><b>${esc(sec.key)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}</summary>${renderFindings(sec.text.trim(), fs)}</details>`;
-      }
-      fileOut.innerHTML = html;
+      const result = analyzeDocument(doc, checker, { level: $('fileLevel').value, grade: Number($('fileGrade').value), names });
+      renderResult(result);
     }
-    // 표 칸 단위 점검 (나이스 한글 출력물)
-    function renderRecord(doc, rawItems, names) {
-      const level = $('fileLevel').value, grade = Number($('fileGrade').value);
-      const hiddenCount = {};
-      const items = rawItems.map((it) => {
-        const m = maskPersonal(it.text, names);
-        m.hits.forEach((h) => (hiddenCount[h.id] = (hiddenCount[h.id] || 0) + h.count));
-        return { ...it, text: m.text };
-      });
-      const results = items.map((it) => checker.check(it.text, { level, grade: Number(it.meta.학년) || grade, area: it.area }));
-      recordChecks(items, similarity).forEach((f) => results[f.item].findings.push(f));
-      const total = { 금지: 0, 형식: 0, 확인: 0 };
-      results.forEach((r) => r.findings.forEach((f) => total[f.심각도]++));
-      const hidden = Object.entries(hiddenCount).map(([k, v]) => `${k} ${v}건`).join(', ') || '없음';
-      let html = `<h3>“${esc(doc.name)}” 점검 결과</h3>
-        <p>${doc.kind.toUpperCase()}${doc.pageCount ? ` · ${doc.pageCount}쪽` : ''} · 점검한 칸 ${items.length}개 · 금지 ${total.금지}건 · 형식 ${total.형식}건 · 확인 ${total.확인}건</p>
-        <p class="note">표의 칸(과목별 세특, 창체 영역, 출결 특기사항, 행특 등)마다 따로 점검했습니다. 가린 개인정보: ${esc(hidden)}</p>`;
-      let current = '';
-      items.forEach((it, i) => {
-        const r = results[i];
-        r.findings.sort((a, b) => a.start - b.start);
-        if (it.section !== current) { html += `<h4 class="sec-title">${esc(it.section)}</h4>`; current = it.section; }
-        const c = (s) => r.findings.filter((f) => f.심각도 === s).length;
-        const bytes = r.maxBytes ? ` · ${r.bytes}/${r.maxBytes} byte` : '';
-        html += `<details class="sec" ${r.findings.length ? 'open' : ''}><summary><b>${esc(it.label)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}${bytes}</summary>${renderFindings(it.text, r.findings)}</details>`;
-      });
+
+    function renderUnits(units) {
+      let html = '', current = '';
+      for (const u of units) {
+        if (u.section !== current && u.label !== u.section) { html += `<h4 class="sec-title">${esc(u.section)}</h4>`; current = u.section; }
+        const c = (s) => u.findings.filter((f) => f.심각도 === s).length;
+        const bytes = u.maxBytes ? ` · ${u.bytes}/${u.maxBytes} byte` : '';
+        html += `<details class="sec" ${u.findings.length ? 'open' : ''}><summary><b>${esc(u.label)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}${bytes}</summary>${renderFindings(u.text, u.findings)}</details>`;
+      }
+      return html;
+    }
+
+    function renderResult(r) {
+      const T = r.total;
+      const hidden = r.hidden.map((h) => `${h.id} ${h.count}건`).join(', ') || '없음';
+      let html = `<h3>“${esc(r.name)}” 점검 결과</h3>
+        ${r.ocr ? '<p class="warn">스캔한 PDF라서 글자 인식(OCR)으로 읽었습니다. 인식 오류(예: 실천→실친)가 섞일 수 있으니, 표시된 곳은 원본과 대조해 주세요. 가장 정확한 점검은 나이스에서 PDF·한글로 저장한 파일로 할 수 있습니다.</p>' : ''}
+        <p>${r.kind.toUpperCase()}${r.ocr ? '(스캔·글자 인식)' : ''}${r.pageCount ? ` · ${r.pageCount}쪽` : ''} · 학생 ${r.students.length}명 · 금지 ${T.금지}건 · 형식 ${T.형식}건 · 확인 ${T.확인}건</p>
+        <p class="note">${r.mode === 'record' ? '표의 칸(과목별 세특, 창체 영역, 출결 특기사항, 행특 등)마다 따로 점검했습니다. ' : ''}가린 개인정보: ${esc(hidden)}</p>`;
+      if (r.students.length > 1) {
+        html += '<table class="summary"><thead><tr><th>학생</th><th>금지</th><th>형식</th><th>확인</th><th></th></tr></thead><tbody>';
+        r.students.forEach((st, i) => {
+          html += `<tr><td>${esc(st.label)}</td><td class="n 금지">${st.total.금지}</td><td class="n 형식">${st.total.형식}</td><td class="n 확인">${st.total.확인}</td><td><a href="#st-${i}">보기</a></td></tr>`;
+        });
+        html += '</tbody></table>';
+        r.students.forEach((st, i) => {
+          html += `<details class="student" id="st-${i}"><summary><b>${esc(st.label)}</b> — 금지 ${st.total.금지} · 형식 ${st.total.형식} · 확인 ${st.total.확인}</summary>${renderUnits(st.units)}</details>`;
+        });
+      } else {
+        html += renderUnits(r.students[0].units);
+      }
       fileOut.innerHTML = html;
+      fileOut.querySelectorAll('.summary a').forEach((a) => a.addEventListener('click', (e) => {
+        const d = document.querySelector(a.getAttribute('href'));
+        if (d) d.open = true;
+      }));
     }
 
     $('file').addEventListener('change', (e) => { if (e.target.files[0]) checkFile(e.target.files[0]); });
@@ -281,6 +269,7 @@
     }
     $('sample').addEventListener('click', () => loadSample('가상학생_전공과_학생부.hwpx'));
     $('samplePdf').addEventListener('click', () => loadSample('가상학생_학생부_샘플.pdf'));
+    $('sampleClass').addEventListener('click', () => loadSample('가상_반전체_학생부.hwpx'));
 
     load();
   </script>

@@ -75,9 +75,10 @@ async function readPdf(bytes, opts = {}) {
     } catch (e) {
       throw new ReadError('ocr-failed', '스캔본 글자 인식에 실패했습니다. 나이스에서 PDF나 한글 파일로 저장한 파일을 넣어 주세요.');
     }
-    return { text: stripPageFurniture(ocrPages.join('\n')), pageCount: doc.numPages, ocr: true };
+    const raw = ocrPages.join('\n');
+    return { text: stripPageFurniture(raw), rawText: raw, pageCount: doc.numPages, ocr: true };
   }
-  return { text: stripPageFurniture(text), pageCount: doc.numPages };
+  return { text: stripPageFurniture(text), rawText: text, pageCount: doc.numPages };
 }
 
 /** kordoc 마크다운 → 점검용 평문 (표 칸은 줄로) */
