@@ -3,283 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>생기부 빨간펜</title>
-  <link rel="icon" href="data:,">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      color: #333;
-    }
-    .hero { text-align: center; padding: 60px 20px 30px; color: white; }
-    .hero h1 { font-size: 2.6rem; margin-bottom: 12px; }
-    .hero p { font-size: 1.1rem; opacity: 0.9; }
-    .btn {
-      display: inline-block; margin-top: 24px; padding: 14px 36px;
-      background: white; color: #764ba2; border: none; border-radius: 30px;
-      font-size: 1rem; font-weight: bold; cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .features { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; padding: 20px; }
-    .card {
-      background: white; border-radius: 16px; padding: 24px; width: 260px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center;
-    }
-    .card .icon { font-size: 2.4rem; margin-bottom: 10px; }
-    .card h3 { margin-bottom: 8px; }
-    .checker {
-      max-width: 800px; margin: 30px auto 60px; background: white;
-      border-radius: 16px; padding: 30px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-    textarea { width: 100%; height: 180px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
-    .result { margin-top: 20px; }
-    .result li { margin: 8px 0 8px 20px; }
-    .ok { color: green; }
-    .bad { color: #d33; }
-    .opts { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-    .opts label { display: flex; flex-direction: column; font-size: .9rem; gap: 4px; }
-    .opts select { padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
-    .counter { text-align: right; font-size: .85rem; color: #666; margin-top: 6px; }
-    .counter.over { color: #d33; font-weight: bold; }
-    .marked { white-space: pre-wrap; background: #fafafa; border-radius: 10px; padding: 14px; margin: 12px 0; line-height: 1.8; }
-    mark.금지 { background: #ffd6d6; } mark.형식 { background: #ffe9c2; } mark.확인 { background: #fff7b0; }
-    b.금지 { color: #d33; } b.형식 { color: #d97706; } b.확인 { color: #a16207; }
-    .note { font-size: .85rem; color: #555; margin-top: 10px; line-height: 1.6; }
-    .drop { display: block; border: 2px dashed #aaa; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; color: #666; }
-    .drop.over { border-color: #764ba2; background: #f4f0fb; }
-    .opts input { padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
-    details.sec { border-top: 1px solid #eee; padding: 10px 0; }
-    details.sec summary { cursor: pointer; }
-    .sec-title { margin: 18px 0 4px; font-size: 1rem; }
-    .warn { background: #fff4d6; border-radius: 8px; padding: 10px; font-size: .9rem; }
-    table.summary { border-collapse: collapse; margin: 12px 0; width: 100%; }
-    table.summary th, table.summary td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
-    table.summary td.n { text-align: right; }
-    details.student { border: 1px solid #eee; border-radius: 10px; padding: 8px 12px; margin: 10px 0; }
-  </style>
+  <title>생기부 빨간펜 — 학교생활기록부 점검</title>
+  <meta name="description" content="나이스에서 출력한 학교생활기록부(PDF·한글)를 넣으면 2026 기재요령에 따라 빨간 펜으로 교정해 주는 선생님용 점검 도구. 파일은 브라우저 안에서만 처리합니다.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 26 L22 6 L26 10 L10 30 Z' fill='%23D7191F'/%3E%3Cpath d='M6 26 L4 31 L10 30 Z' fill='%231D232B'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-  <section class="hero">
-    <h1>📝 생기부 빨간펜</h1>
-    <p>AI와 함께 학교생활기록부를 쉽고 빠르게 점검하세요!</p>
-    <button class="btn" onclick="document.getElementById('checker').scrollIntoView({behavior:'smooth'})">시작하기</button>
-  </section>
+  <header class="top">
+    <a class="wordmark" href="./">생기부 <span class="pen">빨간펜<svg viewBox="0 0 120 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 30 2, 60 11, 118 4"/></svg></span></a>
+    <nav>
+      <a href="https://github.com/Gitub-fx/saenggibu-redpen/blob/main/docs/RULES.md" target="_blank" rel="noopener">점검 규칙</a>
+      <a href="https://github.com/Gitub-fx/saenggibu-redpen" target="_blank" rel="noopener">소스 코드</a>
+    </nav>
+  </header>
 
-  <section class="features">
-    <div class="card"><div class="icon">🚫</div><h3>금지어 점검</h3><p>기재할 수 없는 단어를 찾아줍니다.</p></div>
-    <div class="card"><div class="icon">📏</div><h3>글자수 확인</h3><p>나이스 바이트 기준으로 계산합니다.</p></div>
-    <div class="card"><div class="icon">🤖</div><h3>AI 흔적 탐지</h3><p>AI가 쓴 듯한 표현을 찾아줍니다.</p></div>
-  </section>
+  <main>
+    <section class="intro">
+      <div class="intro-text">
+        <h1>학년말 학생부,<br>파일째 넣으면 기재요령대로 교정합니다</h1>
+        <p class="lead">나이스에서 출력한 PDF나 한글 파일을 넣으세요. 기재 금지어, 일자 표기, 글자수, 학생 간 같은 세특, AI가 쓴 흔적까지 2026 학교생활기록부 기재요령(초·중·고) 기준으로 찾아 표시합니다.</p>
+        <p class="privacy">파일은 이 컴퓨터의 브라우저 안에서만 읽습니다. 서버로 보내지 않고, 주민등록번호·이름·주소는 가려서 보여 줍니다.</p>
+      </div>
 
-  <section class="checker" id="checker">
-    <h2>문장 점검하기</h2>
-    <p style="margin:10px 0">학교급과 영역을 고르고 학생부 문장을 붙여넣은 뒤 점검 버튼을 누르세요.</p>
-    <div class="opts">
-      <label>학교급
-        <select id="level"><option>고등학교</option><option>중학교</option><option>초등학교</option></select>
-      </label>
-      <label>학년
-        <select id="grade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select>
-      </label>
-      <label>영역
-        <select id="area"></select>
-      </label>
-    </div>
-    <textarea id="input" placeholder="여기에 학생부 내용을 붙여넣으세요..."></textarea>
-    <div class="counter" id="counter">0 / 0 byte</div>
-    <button class="btn" id="run">점검하기</button>
-    <button class="btn" id="speller" title="문장을 복사한 뒤 바른한글 맞춤법 검사기를 새 창으로 엽니다">바른한글로 맞춤법 검사</button>
-    <p class="note" id="spellerNote">맞춤법은 <a href="https://nara-speller.co.kr/speller/" target="_blank" rel="noopener">바른한글</a>(구 부산대 맞춤법·문법 검사기)에서 검사합니다. 버튼을 누르면 문장이 복사되고 바른한글이 새 창으로 열립니다. 그 창에 붙여넣기(Ctrl+V) 후 검사하세요. 바른한글은 외부 사이트이므로 <b>학생 이름 등 개인정보는 지우고</b> 검사하세요.</p>
-    <div class="result" id="result"></div>
-  </section>
+      <figure class="specimen" aria-label="교정 예시">
+        <table class="form">
+          <tr><th>영역</th><th>특기사항</th></tr>
+          <tr>
+            <td class="head">자율·자치활동</td>
+            <td class="serif">학교폭력예방교육(2026.03.04<span class="m 형식">~</span>2026.07.08)에 참여함. <span class="m 확인">위 학생은</span> 교내 <span class="m 금지">토론대회</span>에서 사회를 맡아 진행하였<span class="m 형식">다.</span></td>
+          </tr>
+        </table>
+        <figcaption>
+          <span class="note-hand 금지">대회 — 기재 불가</span>
+          <span class="note-hand 형식">기간은 하이픈(-), 끝은 ~함.</span>
+          <span class="note-hand 확인">학생 지칭, AI 흔적?</span>
+        </figcaption>
+      </figure>
+    </section>
 
-  <section class="checker" id="filecheck">
-    <h2>파일 점검하기 (PDF · 한글)</h2>
-    <p style="margin:10px 0">나이스에서 출력한 학교생활기록부 PDF나 한글(.hwp, .hwpx) 파일을 넣으세요. 파일은 <b>이 컴퓨터의 브라우저 안에서만</b> 읽고 점검하며, 어디로도 보내지 않습니다. 주민등록번호·이름·주소·연락처는 자동으로 가려서 보여 줍니다.</p>
-    <label class="drop" id="drop">
-      <input type="file" id="file" accept=".pdf,.hwp,.hwpx" hidden>
-      <span>여기에 파일을 끌어다 놓거나 눌러서 고르세요</span>
-    </label>
-    <div class="opts" style="margin-top:12px">
-      <label>학교급 <select id="fileLevel"><option>고등학교</option><option>중학교</option><option>초등학교</option></select></label>
-      <label>학년 <select id="fileGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
-      <label style="flex:1">가릴 학생 이름(선택, 쉼표로 구분) <input id="names" placeholder="예: 김하늘, 이바다"></label>
-    </div>
-    <button class="btn" id="sample">가상 학생 한글 샘플로 체험하기</button>
-    <button class="btn" id="samplePdf">가상 학생 PDF 샘플로 체험하기</button>
-    <button class="btn" id="sampleClass">가상 반 전체(3명) 샘플로 체험하기</button>
-    <div class="result" id="fileResult"></div>
-  </section>
+    <section class="workbench">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-file" aria-selected="true" aria-controls="filecheck">파일 점검</button>
+        <button role="tab" id="tab-text" aria-selected="false" aria-controls="checker">문장 점검</button>
+      </div>
 
-  <script type="module">
-    import { createChecker, neisBytes, similarity } from './js/engine.js';
-    import { readFile, ReadError } from './js/reader.js';
-    import { analyzeDocument } from './js/analyze.js';
+      <div class="panel" id="filecheck" role="tabpanel" aria-labelledby="tab-file">
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".pdf,.hwp,.hwpx">
+          <span class="drop-title">학생부 파일을 여기에 끌어다 놓으세요</span>
+          <span class="drop-sub">또는 눌러서 고르기 · PDF, 한글(.hwp, .hwpx) · 반 전체 파일도 학생별로 나눠 점검</span>
+        </label>
+        <div class="opts">
+          <label>학교급 <select id="fileLevel"><option>고등학교</option><option>중학교</option><option>초등학교</option></select></label>
+          <label>학년 <select id="fileGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
+          <label class="grow">가릴 학생 이름 <small>(선택, 쉼표로 구분)</small> <input id="names" placeholder="예: 김하늘, 이바다"></label>
+        </div>
+        <div class="samples">
+          <span>파일이 없으면 가상 학생 자료로 먼저 써 보세요</span>
+          <button class="ghost" id="sample">한글 파일 1명</button>
+          <button class="ghost" id="samplePdf">PDF 1명</button>
+          <button class="ghost" id="sampleClass">반 전체 3명</button>
+        </div>
+        <div class="result" id="fileResult" aria-live="polite"></div>
+      </div>
 
-    const $ = (id) => document.getElementById(id);
-    let checker;
+      <div class="panel" id="checker" role="tabpanel" aria-labelledby="tab-text" hidden>
+        <div class="opts">
+          <label>학교급 <select id="level"><option>고등학교</option><option>중학교</option><option>초등학교</option></select></label>
+          <label>학년 <select id="grade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></label>
+          <label class="grow">영역 <select id="area"></select></label>
+        </div>
+        <div class="sheet">
+          <textarea id="input" class="serif" placeholder="나이스에 입력한 문장을 그대로 붙여넣으세요"></textarea>
+          <div class="counter" id="counter">0 / 0 byte</div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="run">점검하기</button>
+          <button class="ghost" id="speller" title="문장을 복사한 뒤 바른한글 맞춤법 검사기를 새 창으로 엽니다">바른한글에서 맞춤법 검사</button>
+        </div>
+        <p class="note" id="spellerNote">맞춤법은 바른한글(구 부산대 맞춤법·문법 검사기)에서 검사합니다. 버튼을 누르면 문장이 복사되고 바른한글이 새 창으로 열립니다. 외부 사이트이므로 학생 이름 등 개인정보는 지우고 붙여넣으세요.</p>
+        <div class="result" id="result" aria-live="polite"></div>
+      </div>
+    </section>
 
-    async function load() {
-      try {
-        const [rules, orgs] = await Promise.all([
-          fetch('./data/rules.json').then((r) => r.json()),
-          fetch('./data/allowed_orgs.json').then((r) => r.json()),
-        ]);
-        checker = createChecker(rules, orgs);
-        fillAreas();
-      } catch (e) {
-        $('result').innerHTML = '<p class="bad">규칙을 불러오지 못했습니다. 새로고침 해 주세요.</p>';
-      }
-    }
+    <section class="legend" aria-label="교정 부호">
+      <span><i class="m 금지">취소선</i> 금지 — 기재요령상 쓸 수 없음</span>
+      <span><i class="m 형식">물결 밑줄</i> 형식 — 표기 방식을 고칠 것</span>
+      <span><i class="m 확인">형광펜</i> 확인 — 선생님이 판단할 것</span>
+    </section>
+  </main>
 
-    function fillAreas() {
-      const areas = checker.areas($('level').value);
-      $('area').innerHTML = areas.map((a) => `<option value="${a.id}" data-max="${a.maxBytes || ''}">${a.label} (${a.maxChars ? a.maxChars + '자' : '글자수 제한 없음'})</option>`).join('');
-      fillGrades('grade', $('level').value);
-      updateCounter();
-    }
+  <footer class="bottom">
+    <p>기준: 2026 학교생활기록부 기재요령(초등학교·중학교·고등학교). 점검 결과는 참고용이며 최종 판단은 기재 담당 선생님이 합니다.</p>
+  </footer>
 
-    function fillGrades(id, level) {
-      const n = level === '초등학교' ? 6 : 3, sel = $(id), cur = sel.value;
-      sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}">${i + 1}학년</option>`).join('');
-      if (Number(cur) <= n) sel.value = cur;
-    }
-
-    function updateCounter() {
-      const opt = $('area').selectedOptions[0];
-      const max = opt && opt.dataset.max ? Number(opt.dataset.max) : 0;
-      const b = neisBytes($('input').value);
-      $('counter').textContent = max ? `${b} / ${max} byte` : `${b} byte (글자수 제한 없음)`;
-      $('counter').className = 'counter' + (max && b > max ? ' over' : '');
-    }
-
-    function esc(s) { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-    function highlight(text, findings) {
-      const marks = findings.filter((f) => f.end > f.start).sort((a, b) => a.start - b.start);
-      let out = '', pos = 0;
-      for (const f of marks) {
-        if (f.start < pos) continue;
-        out += esc(text.slice(pos, f.start)) + `<mark class="${f.심각도}" title="${esc(f.항목)}">${esc(text.slice(f.start, f.end))}</mark>`;
-        pos = f.end;
-      }
-      return out + esc(text.slice(pos));
-    }
-
-    function run() {
-      if (!checker) return;
-      const text = $('input').value;
-      if (!text.trim()) { $('result').innerHTML = '<p>점검할 문장을 입력해 주세요.</p>'; return; }
-      const { findings, bytes, maxBytes } = checker.check(text, {
-        level: $('level').value, area: $('area').value, grade: Number($('grade').value),
-      });
-      const count = (s) => findings.filter((f) => f.심각도 === s).length;
-      let html = `<h3>점검 결과</h3><p>금지 ${count('금지')}건 · 형식 ${count('형식')}건 · 확인 ${count('확인')}건 · ${maxBytes ? `${bytes}/${maxBytes} byte` : `${bytes} byte (글자수 제한 없음)`}</p>`;
-      if (!findings.length) html += '<p class="ok">문제가 발견되지 않았습니다! 🎉</p>';
-      html += `<div class="marked">${highlight(text, findings)}</div><ul>`;
-      for (const f of findings) {
-        html += `<li><b class="${f.심각도}">[${f.심각도}] ${esc(f.항목)}</b>${f.match ? ` — “${esc(f.match)}”` : ''}<br><small>${esc(f.메시지)} (근거: ${esc(f.근거 || '')})</small></li>`;
-      }
-      $('result').innerHTML = html + '</ul>';
-    }
-
-    $('level').addEventListener('change', fillAreas);
-    $('fileLevel').addEventListener('change', () => fillGrades('fileGrade', $('fileLevel').value));
-    $('area').addEventListener('change', updateCounter);
-    $('input').addEventListener('input', updateCounter);
-    $('run').addEventListener('click', run);
-    $('speller').addEventListener('click', async () => {
-      const text = $('input').value.trim();
-      if (!text) { $('spellerNote').textContent = '먼저 검사할 문장을 입력해 주세요.'; return; }
-      let copied = false;
-      try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { /* 복사 권한이 없으면 안내만 */ }
-      window.open('https://nara-speller.co.kr/speller/', '_blank', 'noopener');
-      $('spellerNote').textContent = copied
-        ? '문장을 복사했습니다. 새로 열린 바른한글 창의 입력칸에 붙여넣기(Ctrl+V) 후 [검사하기]를 누르세요.'
-        : '복사하지 못했습니다. 입력칸의 문장을 직접 복사(Ctrl+A, Ctrl+C)해 바른한글 창에 붙여넣어 주세요.';
-    });
-    // ---- 파일 점검 ----
-    const fileOut = $('fileResult');
-    function renderFindings(text, findings) {
-      let html = `<div class="marked">${highlight(text, findings)}</div><ul>`;
-      for (const f of findings) {
-        html += `<li><b class="${f.심각도}">[${f.심각도}] ${esc(f.항목)}</b>${f.match ? ` — “${esc(f.match.slice(0, 60))}”` : ''}<br><small>${esc(f.메시지)} (근거: ${esc(f.근거 || '')})</small></li>`;
-      }
-      return html + '</ul>';
-    }
-    async function checkFile(file) {
-      if (!checker) { fileOut.innerHTML = '<p class="bad">규칙을 아직 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.</p>'; return; }
-      fileOut.innerHTML = `<p>“${esc(file.name)}” 읽는 중…</p>`;
-      let doc;
-      try {
-        doc = await readFile(file, {
-          allowOcr: true,
-          onPage: ({ page, total }) => { fileOut.innerHTML = `<p>스캔한 PDF라서 글자를 인식하는 중… (${page}/${total}쪽)<br><small>한 쪽에 몇 초씩 걸립니다. 파일은 이 컴퓨터 안에서만 처리합니다.</small></p>`; },
-        });
-      } catch (e) {
-        const msg = e instanceof ReadError ? e.message : '파일을 읽는 중 문제가 생겼습니다. 다시 시도해 주세요.';
-        fileOut.innerHTML = `<p class="bad">${esc(msg)}</p>`; return;
-      }
-      const names = $('names').value.split(',').map((x) => x.trim()).filter(Boolean);
-      const result = analyzeDocument(doc, checker, { level: $('fileLevel').value, grade: Number($('fileGrade').value), names });
-      renderResult(result);
-    }
-
-    function renderUnits(units) {
-      let html = '', current = '';
-      for (const u of units) {
-        if (u.section !== current && u.label !== u.section) { html += `<h4 class="sec-title">${esc(u.section)}</h4>`; current = u.section; }
-        const c = (s) => u.findings.filter((f) => f.심각도 === s).length;
-        const bytes = u.maxBytes ? ` · ${u.bytes}/${u.maxBytes} byte` : '';
-        html += `<details class="sec" ${u.findings.length ? 'open' : ''}><summary><b>${esc(u.label)}</b> — 금지 ${c('금지')} · 형식 ${c('형식')} · 확인 ${c('확인')}${bytes}</summary>${renderFindings(u.text, u.findings)}</details>`;
-      }
-      return html;
-    }
-
-    function renderResult(r) {
-      const T = r.total;
-      const hidden = r.hidden.map((h) => `${h.id} ${h.count}건`).join(', ') || '없음';
-      let html = `<h3>“${esc(r.name)}” 점검 결과</h3>
-        ${r.ocr ? '<p class="warn">스캔한 PDF라서 글자 인식(OCR)으로 읽었습니다. 인식 오류(예: 실천→실친)가 섞일 수 있으니, 표시된 곳은 원본과 대조해 주세요. 가장 정확한 점검은 나이스에서 PDF·한글로 저장한 파일로 할 수 있습니다.</p>' : ''}
-        <p>${r.kind.toUpperCase()}${r.ocr ? '(스캔·글자 인식)' : ''}${r.pageCount ? ` · ${r.pageCount}쪽` : ''} · 학생 ${r.students.length}명 · 금지 ${T.금지}건 · 형식 ${T.형식}건 · 확인 ${T.확인}건</p>
-        <p class="note">${r.mode === 'record' ? '표의 칸(과목별 세특, 창체 영역, 출결 특기사항, 행특 등)마다 따로 점검했습니다. ' : ''}가린 개인정보: ${esc(hidden)}</p>`;
-      if (r.students.length > 1) {
-        html += '<table class="summary"><thead><tr><th>학생</th><th>금지</th><th>형식</th><th>확인</th><th></th></tr></thead><tbody>';
-        r.students.forEach((st, i) => {
-          html += `<tr><td>${esc(st.label)}</td><td class="n 금지">${st.total.금지}</td><td class="n 형식">${st.total.형식}</td><td class="n 확인">${st.total.확인}</td><td><a href="#st-${i}">보기</a></td></tr>`;
-        });
-        html += '</tbody></table>';
-        r.students.forEach((st, i) => {
-          html += `<details class="student" id="st-${i}"><summary><b>${esc(st.label)}</b> — 금지 ${st.total.금지} · 형식 ${st.total.형식} · 확인 ${st.total.확인}</summary>${renderUnits(st.units)}</details>`;
-        });
-      } else {
-        html += renderUnits(r.students[0].units);
-      }
-      fileOut.innerHTML = html;
-      fileOut.querySelectorAll('.summary a').forEach((a) => a.addEventListener('click', (e) => {
-        const d = document.querySelector(a.getAttribute('href'));
-        if (d) d.open = true;
-      }));
-    }
-
-    $('file').addEventListener('change', (e) => { if (e.target.files[0]) checkFile(e.target.files[0]); });
-    const drop = $('drop');
-    ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
-    ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
-    drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) checkFile(f); });
-    async function loadSample(name) {
-      try {
-        const blob = await fetch('./samples/' + encodeURIComponent(name)).then((r) => { if (!r.ok) throw new Error(); return r.blob(); });
-        checkFile(new File([blob], name));
-      } catch (e) { fileOut.innerHTML = '<p class="bad">샘플 파일을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.</p>'; }
-    }
-    $('sample').addEventListener('click', () => loadSample('가상학생_전공과_학생부.hwpx'));
-    $('samplePdf').addEventListener('click', () => loadSample('가상학생_학생부_샘플.pdf'));
-    $('sampleClass').addEventListener('click', () => loadSample('가상_반전체_학생부.hwpx'));
-
-    load();
-  </script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>

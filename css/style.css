@@ -1,0 +1,173 @@
+/* 생기부 빨간펜 — 교정지 콘셉트
+   종이: 흰 학생부 양식, 괘선 표, 회색 머리칸
+   교정: 빨간 펜(금지·형식)과 형광펜(확인)만 색을 쓴다. 버튼·장식에는 빨강을 쓰지 않는다. */
+
+:root {
+  --paper: #ffffff;
+  --desk: #eef0f2;
+  --ink: #1d232b;
+  --ink-soft: #4a525c;
+  --rule: #9aa3ad;
+  --headcell: #e9ecef;
+  --red: #d7191f;
+  --hl: #ffe766;
+  --serif: "Noto Serif KR", "바탕", Batang, serif;
+  --sans: "Pretendard Variable", Pretendard, "맑은 고딕", "Malgun Gothic", sans-serif;
+  --hand: "Nanum Pen Script", var(--sans);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--desk);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* 머리 */
+.top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  max-width: 1120px; margin: 0 auto; padding: 22px 24px 8px;
+}
+.wordmark { text-decoration: none; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.01em; }
+.wordmark .pen { position: relative; display: inline-block; }
+.wordmark svg { position: absolute; left: -2px; right: -2px; bottom: -6px; width: calc(100% + 4px); height: 10px; }
+.wordmark path { fill: none; stroke: var(--red); stroke-width: 3; stroke-linecap: round; }
+.top nav { display: flex; gap: 18px; font-size: .9rem; color: var(--ink-soft); }
+.top nav a { text-decoration: none; }
+.top nav a:hover { text-decoration: underline; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 0 24px 48px; }
+
+/* 첫 화면: 왼쪽 설명, 오른쪽 교정 예시 */
+.intro {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 40px; align-items: center;
+  padding: 36px 0 32px;
+}
+.intro h1 { font-size: 2rem; line-height: 1.35; letter-spacing: -0.02em; font-weight: 700; }
+.lead { margin-top: 16px; color: var(--ink-soft); max-width: 36em; }
+.privacy {
+  margin-top: 16px; padding-left: 12px; border-left: 3px solid var(--ink);
+  font-size: .92rem; max-width: 36em;
+}
+
+.specimen { background: var(--paper); padding: 22px 22px 18px; border: 1px solid #d5dae0; }
+.specimen figcaption { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; }
+
+/* 학생부 양식 표 */
+table.form { width: 100%; border-collapse: collapse; border: 1.5px solid var(--ink); }
+table.form th, table.form td { border: 1px solid var(--rule); padding: 8px 10px; text-align: left; vertical-align: top; }
+table.form th { background: var(--headcell); font-weight: 600; font-size: .85rem; }
+table.form td.head { background: var(--headcell); width: 8.5em; font-size: .85rem; }
+.serif { font-family: var(--serif); line-height: 1.95; }
+
+/* 교정 부호 */
+.m { font-style: normal; }
+.m.금지 { text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px; color: var(--ink); }
+.m.형식 { text-decoration: underline wavy var(--red); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.m.확인 { background: linear-gradient(transparent 38%, var(--hl) 38%, var(--hl) 88%, transparent 88%); }
+.note-hand { font-family: var(--hand); font-size: 1.35rem; line-height: 1.2; color: var(--red); }
+.note-hand.확인 { color: #8a6d00; }
+
+/* 작업대: 탭 + 패널 */
+.workbench { background: var(--paper); border: 1px solid #d5dae0; }
+.tabs { display: flex; border-bottom: 1px solid var(--rule); }
+.tabs button {
+  font: inherit; font-weight: 600; background: none; border: 0; cursor: pointer;
+  padding: 14px 22px; color: var(--ink-soft); border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.panel { padding: 24px; }
+
+.drop {
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+  border: 1.5px dashed var(--rule); padding: 28px 24px; cursor: pointer; background: #fafbfc;
+}
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.drop:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.drop.over { border-color: var(--ink); background: #f3f5f7; }
+.drop-title { font-weight: 700; font-size: 1.1rem; }
+.drop-sub { font-size: .88rem; color: var(--ink-soft); }
+
+.opts { display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 16px 0; }
+.opts label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--ink-soft); }
+.opts .grow { flex: 1 1 220px; }
+.opts small { font-size: .8rem; }
+select, input, textarea {
+  font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 2px; padding: 8px 10px;
+}
+.opts select { min-width: 9em; }
+
+.samples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: .9rem; color: var(--ink-soft); }
+.samples span { margin-right: 4px; }
+
+button.primary, button.ghost {
+  font: inherit; font-weight: 600; cursor: pointer; border-radius: 2px; padding: 10px 18px;
+}
+button.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+button.primary:hover { background: #333b45; }
+button.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--rule); padding: 7px 14px; }
+button.ghost:hover { border-color: var(--ink); }
+
+.sheet { border: 1.5px solid var(--ink); }
+.sheet textarea { display: block; width: 100%; min-height: 190px; border: 0; padding: 14px 16px; resize: vertical; font-size: 1rem; }
+.sheet textarea:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--ink); }
+.counter { border-top: 1px solid var(--rule); background: var(--headcell); padding: 4px 12px; text-align: right; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.counter.over { color: var(--red); font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.note { margin-top: 10px; font-size: .85rem; color: var(--ink-soft); max-width: 60em; }
+
+/* 결과 (11/29 교정지 화면으로 다듬을 예정) */
+.result { margin-top: 22px; }
+.result h3 { font-size: 1.15rem; margin-bottom: 6px; }
+.result ul { list-style: none; margin-top: 8px; }
+.result li { padding: 8px 0; border-top: 1px solid #e3e6ea; }
+.result li small { color: var(--ink-soft); }
+.marked { white-space: pre-wrap; font-family: var(--serif); line-height: 1.95; border: 1px solid var(--rule); padding: 12px 14px; margin: 10px 0; background: var(--paper); }
+mark { background: none; color: inherit; }
+mark.금지 { text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px; }
+mark.형식 { text-decoration: underline wavy var(--red); text-underline-offset: 4px; }
+mark.확인 { background: linear-gradient(transparent 38%, var(--hl) 38%, var(--hl) 88%, transparent 88%); }
+b.금지, b.형식 { color: var(--red); }
+b.확인 { color: #8a6d00; }
+.ok { font-weight: 600; }
+.bad { color: var(--red); font-weight: 600; }
+.warn { border-left: 3px solid #8a6d00; background: #fffbe6; padding: 10px 12px; font-size: .9rem; margin: 8px 0; }
+details.sec { border-top: 1px solid #e3e6ea; padding: 10px 0; }
+details.sec summary, details.student summary { cursor: pointer; }
+.sec-title { margin: 20px 0 4px; font-size: 1rem; }
+table.summary { width: 100%; border-collapse: collapse; border: 1.5px solid var(--ink); margin: 12px 0; font-size: .92rem; }
+table.summary th, table.summary td { border: 1px solid var(--rule); padding: 6px 10px; text-align: left; }
+table.summary th { background: var(--headcell); font-weight: 600; }
+table.summary td.n { text-align: right; font-variant-numeric: tabular-nums; }
+details.student { border: 1px solid var(--rule); padding: 8px 14px; margin: 10px 0; }
+
+/* 교정 부호 안내 */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 18px; font-size: .88rem; color: var(--ink-soft); }
+
+.bottom { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; font-size: .82rem; color: var(--ink-soft); }
+
+/* 휴대폰 */
+@media (max-width: 760px) {
+  .top { padding: 16px 16px 4px; }
+  .top nav { gap: 12px; font-size: .82rem; }
+  main { padding: 0 12px 32px; }
+  .intro { grid-template-columns: 1fr; gap: 20px; padding: 20px 4px 22px; }
+  .intro h1 { font-size: 1.5rem; }
+  .specimen { padding: 14px; }
+  table.form td.head { width: 5.5em; }
+  .panel { padding: 16px; }
+  .drop { padding: 22px 16px; }
+  .opts label, .opts select { width: 100%; }
+  .opts .grow { flex-basis: 100%; }
+  .tabs button { flex: 1; padding: 12px 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
